@@ -100,4 +100,9 @@ plot(pressure)
   - características del vehiculo
   - variables de respuesta
   
-  
+## Agregación por una variable
+```{r}
+by_cyl <- group_by(mtcars, cyl)
+summarise(by_cyl, mean(mpg), mean(hp))
+
+```

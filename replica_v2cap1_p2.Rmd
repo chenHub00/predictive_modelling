@@ -3,8 +3,8 @@ title: "oct01"
 author: "VLD"
 date: "10/1/2020"
 output:
-  slidy_presentation: default
   beamer_presentation: default
+  slidy_presentation: default
 ---
 ```{r}
 getwd()
@@ -236,7 +236,7 @@ setdiff(unique(dta$driver.age), unique(dta$driver.age[dta$train]))
 Frecuencia descriptivos
 
 ```{r}
-#
+# freq claims by driver age
 # Empirical frequency for driver age across the training dataset
 tmp <- subset(dta, subset = train, select = c("driver.age", "exposure", "clm.count"))
 ex <- with(tmp, tapply(exposure, driver.age, sum))
@@ -312,7 +312,7 @@ rm(tmp, ex, cc, fr, nm, tbl)
 ```
 
 ```{r}
-#
+# ex 1.7
 # Empirical frequency by size of engine for the entire dataset
 bk <- unique(quantile(dta$ccm, probs = seq(0, 1, by = 0.05)))
 bk[1] <- bk[1] - 1
@@ -327,5 +327,134 @@ freq
 ```{r}
 # Clean the workspace
 rm(bk, ccm.d, expo, clms, freq)
+```
+
+```{r}
+#
+# Empirical frequency for driver gender
+tmp <- subset(dta, subset = train, select = c("driver.gender", "year", "exposure", "clm.count"))
+ex <- with(tmp, tapply(exposure, driver.gender, sum))
+cc <- with(tmp, tapply(clm.count, driver.gender, sum))
+fr <- round((cc / ex)*100, 1)
+fr
+
+```
+```{r}
+# 1.8a
+# add year as a dimension
+ex <- with(tmp, tapply(exposure, list(year, driver.gender), sum))[c(2,3,4,1),]
+ex <- rbind(ex, total = apply(ex, 2, sum))
+cc <- with(tmp, tapply(clm.count, list(year, driver.gender), sum))[c(2,3,4,1),]
+cc <- rbind(cc, total = apply(cc, 2, sum))
+fr <- round((cc / ex)*100, 1)
+fr
+
+# Clean the workspace
+rm(tmp, ex, cc, fr)
+
+```
+
+
+```{r}
+# Inicial: Empirical frequency for driver gender
+# Final: Empirical frequency for marital status
+# tmp <- subset(dta, subset = train, select = c("driver.gender", "year", "exposure", "clm.count"))
+# variable : "marital.status" por "driver.gender"
+tmp <- subset(dta, subset = train, select = c("marital.status", "year", "exposure", "clm.count"))
+```
+
+```{r}
+# con año por variable
+# ex <- with(tmp, tapply(exposure, driver.gender, sum))
+# variable(s): list(year, marital.status) por driver.gender
+ex <- with(tmp, tapply(exposure, list(year, marital.status), sum))[c(2,3,4,1),]
+ex <- rbind(ex, total = apply(ex, 2, sum))
+# cc <- with(tmp, tapply(clm.count, driver.gender, sum))
+# variable(s): list(year, marital.status) por driver.gender
+cc <- with(tmp, tapply(clm.count, list(year, marital.status), sum))[c(2,3,4,1),]
+cc <- rbind(cc, total = apply(cc, 2, sum))
+# 
+fr <- round((cc / ex)*100, 1)
+
+```
+
+
+```{r}
+# 1.8b
+# Empirical frequency for marital status
+
+fr[,c("Single", "Married", "Divorced", "Widow")]
+```
+```{r}
+# Clean the workspace
+rm(tmp, ex, cc, fr)
+
+```
+
+#### 1.9 diferencias significativas
+
+"experimento" de tamaño 10 mil
+tabla (data frame) con:
+- train
+- solo dos categorias de las 4 disponibles. ¿Cuántas categorias incluir? 
+* 3 variables
+* f: binaria casados VERDADERO
+* d: inicializada,  
+* g: sample takes a sample of the specified size from the elements of f using either with or without replacement.
+*    sample(x, size, replace = FALSE, prob = NULL)
+* married.fq: frecuencia (suma de conteo de reclamos/suma de exposición) en g VERDADERO
+* widow.fq: frecuencia (suma de conteo de reclamos/suma de exposición) en g FALSO
+* d: diferencia casados menos viudos
+* para los 10 mil muestreados. quantiles
+
+```{r}
+# 
+# Is difference between married and widow significant?
+N <- 10000
+tmp <- subset(dta,
+              subset = train &
+                marital.status %in% c("Married", "Widow"),
+              select = c("marital.status",
+                         "exposure", "clm.count"))
+f <- tmp$marital.status == "Married"
+d <- numeric(N)
+for(i in 1:N) {
+  g <- sample(f, length(f))
+  married.fq <- sum(tmp$clm.count[g]) / sum(tmp$exposure[g])
+  widow.fq <- sum(tmp$clm.count[!g]) / sum(tmp$exposure[!g])
+  d[i] <- married.fq - widow.fq
+}
+quantile(d, c(0.025, 0.05, 0.1, 0.25, 0.5,
+              0.75, 0.9, 0.95, 0.975))
+```
+
+```{r}
+rm(N, tmp, f, d, i, g, married.fq, widow.fq) # clean-up
+
+```
+
+
+```{r}
+#
+# Is difference between married and single significant?
+N <- 10000
+tmp <- subset(dta,
+              subset = train &
+                marital.status %in% c("Married", "Single"),
+              select = c("marital.status",
+                         "exposure", "clm.count"))
+f <- tmp$marital.status == "Married"
+d <- numeric(N)
+for(i in 1:N) {
+  g <- sample(f, length(f))
+  married.fq <- sum(tmp$clm.count[g]) / sum(tmp$exposure[g])
+  single.fq <- sum(tmp$clm.count[!g]) / sum(tmp$exposure[!g])
+  d[i] <- married.fq - single.fq
+}
+quantile(d, c(0.005, 0.025, 0.05, 0.1, 0.25, 0.5,
+              0.75, 0.9, 0.95, 0.975, 0.995))
+rm(N, tmp, f, d, i, g, married.fq, single.fq) # clean-up
+
+
 ```
 
